@@ -1,0 +1,3 @@
+void buttonInit();
+
+int isButtonPressed();
