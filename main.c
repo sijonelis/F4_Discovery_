@@ -272,7 +272,8 @@ int main(void)
 	//init USART
 	USARTInit();
 
-	USARTSendByte();
+	USART_puts(USART2, "P_Cmd\n\n");
+	//USARTSendByte();
 	//USARTReadByte();
 
 	/* SysTick end of count event each 40ms */
