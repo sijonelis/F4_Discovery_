@@ -4,3 +4,5 @@
 void USARTInit(void);
 void USARTSendByte(void);
 void USARTReadByte(void);
+void txDataArrayToMsp(char*);
+

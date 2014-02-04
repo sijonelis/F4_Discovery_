@@ -259,6 +259,7 @@ int main(void)
 
 	//adc variables
 	float *result;
+	char mockResult[200];
 
 	//usart state machine switch
 	uartSwitch = 'r';
@@ -331,7 +332,9 @@ int main(void)
     	if(uartSwitchGet() != 'r')
     		switch(uartSwitchGet()){
     		case 't':
-    			uartSwitchSet('r');
+    			for (i=0;i<200;i++)
+    				mockResult[i] = i;
+    			txDataArrayToMsp(mockResult);
     			break;
     		default:
     			break;
