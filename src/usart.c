@@ -1,4 +1,6 @@
 #include "usart.h"
+#include "main.h"
+#include <string.h>
 
 void USARTInit(){
 	GPIO_InitTypeDef GPIO_InitStructure;
@@ -93,6 +95,10 @@ void USART2_IRQHandler(void){
         	cnt++;
         }
         else{ // otherwise reset the character counter and print the received string
+        	if(strcmp(received_string, "PRAck")){
+        		uartSwitchSet('t');
+        	}
+
         	cnt = 0;
         	//USART_puts(USART2, received_string);
         }

@@ -56,6 +56,8 @@
 /* Exported functions ------------------------------------------------------- */
 void TimingDelay_Decrement(void);
 void Delay(__IO uint32_t nTime);
+char uartSwitchGet();
+void uartSwitchSet(char);
 void Fail_Handler(void);
 #endif /* __STM32F4_DISCOVERY_DEMO_H */
 

@@ -92,6 +92,9 @@ __ALIGN_BEGIN USB_OTG_CORE_HANDLE  USB_OTG_dev __ALIGN_END;
  int rxbufptr=0,rxbuflen=0;
 
 char inbuf[100];
+char uartSwitch;
+
+enum {READY, UARTTXPACKET, WAITFORUARTTXPACKET, WAITFORRFTXPACKET, UARTTXACK} uartState;
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -205,6 +208,16 @@ int scanfu(const char *fmt, ...)
 	return i;
 }
 
+
+//UART SWITCH SETTER/GETTER
+void uartSwitchSet(char v){
+	uartSwitch = v;
+}
+
+char uartSwitchGet(){
+	return uartSwitch;
+}
+
 /**
   * @brief  Inserts a delay time.
   * @param  nTime: specifies the delay time length, in 10 ms.
@@ -241,9 +254,14 @@ int main(void)
 	int i = 0, j = 0;
 	int addr;
 
+	//usb atjungimo kintamasis
+	bool usbDisabled = true;
+
 	//adc variables
 	float *result;
 
+	//usart state machine switch
+	uartSwitch = 'r';
 
 	//USB buffer variables
     uint8_t buf[255],outstrg[100],inchar;
@@ -289,133 +307,144 @@ int main(void)
     STM_EVAL_LEDInit(LED5);
     STM_EVAL_LEDInit(LED6);
 
-	// USB Device Initialize
-    USBD_Init(&USB_OTG_dev,
-            USB_OTG_FS_CORE_ID, 
-            &USR_desc, 
-            &USBD_CDC_cb, 
-            &USR_cb);
+    if(!usbDisabled){
+		// USB Device Initialize
+		USBD_Init(&USB_OTG_dev,
+				USB_OTG_FS_CORE_ID,
+				&USR_desc,
+				&USBD_CDC_cb,
+				&USR_cb);
 
-    // Wait for USB connection goes live
-    while (!gbUsbDeviceReady);
+		// Wait for USB connection goes live
+		while (!gbUsbDeviceReady);
 
-    // Clean USB RX buffer
-    while(VCP_get_string(&buf[0]) == 0);
+		// Clean USB RX buffer
+		while(VCP_get_string(&buf[0]) == 0);
 
-    // Output signon
-    printf("USB serial DEMO\r\n");
-    printf("test\n\r>");
-
+		// Output signon
+		printf("USB serial DEMO\r\n");
+		printf("test\n\r>");
+    }
     //  Main loop
     while(1) {
-
-    	//DAC_SignalsGenerate();
-    	inchar = GetCharnw();
-
-    	if(inchar) {
-    		switch (inchar){
-    			case 'a':
-    				result = adcConvert();
-    				float* k;
-    				uint16_t j;
-    				//for (j=0;j<250;j++){
-    					for(k=result;k<result+10/*28000*/;k++){
-    						printf("%f \n",*k);
-    					}
-    			//	}
-    				break;
-    			case 'd':
-    				  intCount = charCount = bufferReadSuccessful = 0;
-    				  while(continueReading){
-    				    for(i=0;i<rxbuflen;i++){
-    					  if(inbuf[i]!='d' && inbuf[i]!='e' && inbuf[i]!=' ' && continueReading == true){
-    						tempString[charCount]=inbuf[i];
-    						charCount++;
-    						if(charCount==4){
-    						  waveform[intCount] = 0;
-    						  for(j=0;j<4;j++)
-    						  waveform[intCount] += (int)(tempString[j]-'0')*pow(10,3-j);
-    						  intCount++;
-    						  charCount = 0;
-    						}
-    					  }
-    					  if(inbuf[i]=='e'||intCount == 32) { continueReading = 0; bufferReadSuccessful = true;}
-    				    }
-    				  rxbuflen = 0;
-    				  char inchar = GetCharnw();
-    				  }
-    				if(bufferReadSuccessful)DAC_SignalsGenerate(&waveform);
-    				break;
-
-    			case 's':
-    				printf("\n\rF4 Discovery Test V0.55\n\r>");
-    				break;
-    			case 't':
-    				printf("\n\rDo 10000 circular interpolation calculations\n\r");
-    				TimingDelay4 = 10000;
-    				angle = 0.125;
-    				radius = 2.56;
-    				angleinc = 0.0001;
-    				for(i=0; i<100000; i++) {
-    					a = radius * sinf(angle);
-    					b = radius * cosf(angle);
-    					angle += angleinc;
-    					}
-    				elapsedtime = ((float)(10000 - TimingDelay4))/25.0;
-    				printf("timing delay=%d\n\r",TimingDelay4);
-    				printf("Single precision finished in %f seconds or %f usec/loop\n\r",elapsedtime,elapsedtime*10.0);
-    				TimingDelay4 = 10000;
-    				angle = 0.125;
-    				radius = 2.56;
-    				angleinc = 0.0001;
-    				for(i=0; i<100000; i++) {
-    					a = radius * sinfp(angle);
-    					b = radius * cosfp(angle);
-    					angle += angleinc;
-    					}
-    				elapsedtime = ((float)(10000 - TimingDelay4))/25.0;
-    				printf("timing delay=%d\n\r",TimingDelay4);
-    				printf("Single prec fp finished in %f seconds or %f usec/loop\n\r",elapsedtime,elapsedtime*10.0);
-    				TimingDelay4 = 10000;
-    				angle = 0.125;
-    				radius = 2.56;
-    				angleinc = 0.0001;
-    				printf("angle=%f radius=%f angleinc=%f\n\r",angle,radius,angleinc);
-    				for(i=0; i<100000; i++) {
-    					a = radius * sin(angle);
-    					b = radius * cos(angle);
-    					angle += angleinc;
-    					}
-    				printf("timing delay=%d\n\r",TimingDelay4);
-    				elapsedtime = ((float)(10000 - TimingDelay4))/25.0;
-    				printf("Double precision finished in %f seconds or %f usec/loop\n\r>",elapsedtime,elapsedtime*10.0);
-    				break;
-				case 'f':
-					printf("f\n\rTry float output: 1.234\n\r");
-					a = 1.234;
-					printf("a = %f\n\r",a);
-					i = 35;
-					printf("i = %d\n\r",i);
-					a = 35.45;
-					printf("a = %f\n\r",a);
-					printf("a = %f\n\r",12.345);
-					printf("a = %f\n\r",-12.345);
-					printf("i = %d\n\r",i);
-					break;
-				case 'g':
-					printf("d\n\rRCC_Clocks.HCLK_Frequency=%ld",RCC_Clocks.HCLK_Frequency);
-					printf("\n\rDelay 2 second\n\r");
-					Delay(200);
-					printf("finished\n\r>");
-					break;
-				case CR:
-					printf("\n\r>");
-					break;
-				default:
-					printf("%c\n\r>",inchar);
-					break;
-				}
+    	//SPI (WITH MSP) STATE MACHINE
+    	if(uartSwitchGet() != 'r')
+    		switch(uartSwitchGet()){
+    		case 't':
+    			uartSwitchSet('r');
+    			break;
+    		default:
+    			break;
     		}
+    	if(!usbDisabled){
+			//USB COMM STATE MACHINE
+			inchar = GetCharnw();
+
+			if(inchar) {
+				switch (inchar){
+					case 'a':
+						result = adcConvert();
+						float* k;
+						uint16_t j;
+						//for (j=0;j<250;j++){
+							for(k=result;k<result+10/*28000*/;k++){
+								printf("%f \n",*k);
+							}
+					//	}
+						break;
+					case 'd':
+						  intCount = charCount = bufferReadSuccessful = 0;
+						  while(continueReading){
+							for(i=0;i<rxbuflen;i++){
+							  if(inbuf[i]!='d' && inbuf[i]!='e' && inbuf[i]!=' ' && continueReading == true){
+								tempString[charCount]=inbuf[i];
+								charCount++;
+								if(charCount==4){
+								  waveform[intCount] = 0;
+								  for(j=0;j<4;j++)
+								  waveform[intCount] += (int)(tempString[j]-'0')*pow(10,3-j);
+								  intCount++;
+								  charCount = 0;
+								}
+							  }
+							  if(inbuf[i]=='e'||intCount == 32) { continueReading = 0; bufferReadSuccessful = true;}
+							}
+						  rxbuflen = 0;
+						  char inchar = GetCharnw();
+						  }
+						if(bufferReadSuccessful)DAC_SignalsGenerate(&waveform);
+						break;
+
+					case 's':
+						printf("\n\rF4 Discovery Test V0.55\n\r>");
+						break;
+					case 't':
+						printf("\n\rDo 10000 circular interpolation calculations\n\r");
+						TimingDelay4 = 10000;
+						angle = 0.125;
+						radius = 2.56;
+						angleinc = 0.0001;
+						for(i=0; i<100000; i++) {
+							a = radius * sinf(angle);
+							b = radius * cosf(angle);
+							angle += angleinc;
+							}
+						elapsedtime = ((float)(10000 - TimingDelay4))/25.0;
+						printf("timing delay=%d\n\r",TimingDelay4);
+						printf("Single precision finished in %f seconds or %f usec/loop\n\r",elapsedtime,elapsedtime*10.0);
+						TimingDelay4 = 10000;
+						angle = 0.125;
+						radius = 2.56;
+						angleinc = 0.0001;
+						for(i=0; i<100000; i++) {
+							a = radius * sinfp(angle);
+							b = radius * cosfp(angle);
+							angle += angleinc;
+							}
+						elapsedtime = ((float)(10000 - TimingDelay4))/25.0;
+						printf("timing delay=%d\n\r",TimingDelay4);
+						printf("Single prec fp finished in %f seconds or %f usec/loop\n\r",elapsedtime,elapsedtime*10.0);
+						TimingDelay4 = 10000;
+						angle = 0.125;
+						radius = 2.56;
+						angleinc = 0.0001;
+						printf("angle=%f radius=%f angleinc=%f\n\r",angle,radius,angleinc);
+						for(i=0; i<100000; i++) {
+							a = radius * sin(angle);
+							b = radius * cos(angle);
+							angle += angleinc;
+							}
+						printf("timing delay=%d\n\r",TimingDelay4);
+						elapsedtime = ((float)(10000 - TimingDelay4))/25.0;
+						printf("Double precision finished in %f seconds or %f usec/loop\n\r>",elapsedtime,elapsedtime*10.0);
+						break;
+					case 'f':
+						printf("f\n\rTry float output: 1.234\n\r");
+						a = 1.234;
+						printf("a = %f\n\r",a);
+						i = 35;
+						printf("i = %d\n\r",i);
+						a = 35.45;
+						printf("a = %f\n\r",a);
+						printf("a = %f\n\r",12.345);
+						printf("a = %f\n\r",-12.345);
+						printf("i = %d\n\r",i);
+						break;
+					case 'g':
+						printf("d\n\rRCC_Clocks.HCLK_Frequency=%ld",RCC_Clocks.HCLK_Frequency);
+						printf("\n\rDelay 2 second\n\r");
+						Delay(200);
+						printf("finished\n\r>");
+						break;
+					case CR:
+						printf("\n\r>");
+						break;
+					default:
+						printf("%c\n\r>",inchar);
+						break;
+					}
+				}
+    	}
 
         if (i == 0x100000) {
             STM_EVAL_LEDOff(LED4);
