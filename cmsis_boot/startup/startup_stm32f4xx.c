@@ -21,10 +21,10 @@
     
 
 /*----------Stack Configuration-----------------------------------------------*/
-//#define STACK_SIZE       0x00000200      /*!< Stack size (in Words)  old setting         */
-#define STACK_SIZE       0x0000800      /*!< Stack size (in Words)           */
- __attribute__ ((section(".co_stack")))
+#define STACK_SIZE       0x00000200      /*!< The Stack size suggest using even number    */
+__attribute__ ((section(".co_stack")))
 unsigned long pulStack[STACK_SIZE];
+
 
 /*----------Macro definition--------------------------------------------------*/
 #define WEAK __attribute__ ((weak))
@@ -33,6 +33,7 @@ unsigned long pulStack[STACK_SIZE];
 
 /*----------Declaration of the default fault handlers-------------------------*/
 /* System exception vector handler */
+__attribute__ ((used))
 void WEAK  Reset_Handler(void);
 void WEAK  NMI_Handler(void);
 void WEAK  HardFault_Handler(void);
@@ -149,12 +150,11 @@ static void Default_Handler(void);  /*!< Default exception handler            */
   *       must be placed on this to ensure that it ends up at physical address
   *       0x00000000.
   */
-__attribute__ ((section(".isr_vector")))
+__attribute__ ((used,section(".isr_vector")))
 void (* const g_pfnVectors[])(void) =
 {
   /*----------Core Exceptions------------------------------------------------ */
-//  (void *)&pulStack[STACK_SIZE-1],     /*!< The initial stack pointer         */
-  (void (*)(void))((unsigned long)pulStack + sizeof(pulStack)),
+  (void *)&pulStack[STACK_SIZE],     /*!< The initial stack pointer         */
   Reset_Handler,             /*!< Reset Handler                               */
   NMI_Handler,               /*!< NMI Handler                                 */
   HardFault_Handler,         /*!< Hard Fault Handler                          */

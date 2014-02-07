@@ -335,6 +335,7 @@ int main(void)
     			for (i=0;i<200;i++)
     				mockResult[i] = i;
     			txDataArrayToMsp(mockResult);
+    			uartSwitchSet('r');
     			break;
     		default:
     			break;
