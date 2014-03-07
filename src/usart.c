@@ -79,14 +79,15 @@ void USART_puts(USART_TypeDef* USARTx, volatile char *s){
 }
 
 void txDataArrayToMsp(char *dataArray){
-	int i, j;
-	//while(*dataArray){ TODO veliau ideti sita
-	for(i=0;i<100;i++){
+	int i = 0;
+	while(i<100){
+	//for(i=0;i<100;i++){
 		//while( !(USART2->SR & 0x00000040) )
 		//USART_SendData(USART2, 'X');
-		USARTSendByte(i);
+		USARTSendByte(*dataArray);
 		//USART_puts(USART2, "X");//*dataArray);
 		dataArray++;
+		i++;
 	}
 }
 

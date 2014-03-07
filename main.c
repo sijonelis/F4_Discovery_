@@ -337,7 +337,7 @@ int main(void)
     			for (i=0;i<600;i++)
     				mockResult[i] = i;
     			for(i=0;i<100;i++)
-    				UARTTxPacket[i] = mockResult[i+100*ultrasoundPacketTxMultiplier];
+    				UARTTxPacket[i] = mockResult[i+ultrasoundPacketTxMultiplier];
     			txDataArrayToMsp(UARTTxPacket);
     			uartSwitchSet('r');
     			break;
