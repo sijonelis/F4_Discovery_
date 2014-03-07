@@ -262,6 +262,7 @@ int main(void)
 	char mockResult[600];
 	char UARTTxPacket[100];
 	static short ultrasoundPacketTxMultiplier = 0;
+    static int ULTRASOUND_PACKET_COUNT = 100;
 
 	//usart state machine switch
 	uartSwitch = 'r';
@@ -333,7 +334,7 @@ int main(void)
     	//SPI (WITH MSP) STATE MACHINE
     	if(uartSwitchGet() != 'r')
     		switch(uartSwitchGet()){
-    		case 't':
+    		case 't': //cmd tx packet
     			for (i=0;i<600;i++)
     				mockResult[i] = i;
     			for(i=0;i<100;i++)
@@ -341,9 +342,18 @@ int main(void)
     			txDataArrayToMsp(UARTTxPacket);
     			uartSwitchSet('r');
     			break;
-    		case 'c':
-    			ultrasoundPacketTxMultiplier++;
+    		case 'e':
+    			//Delay(1000);
+    			USART_puts(USART2, "P_End\n\n");
+    			ultrasoundPacketTxMultiplier = 0;
     			uartSwitchSet('r');
+    			break;
+    		case 'c': //cmd_packet_received_msg.
+    			ultrasoundPacketTxMultiplier++;
+    			if (ultrasoundPacketTxMultiplier >= 100)
+    				uartSwitchSet('e'); //finish transmission, or...
+    			else
+    				uartSwitchSet('r'); // prepare for the next packet
     			break;
     		default:
     			break;
