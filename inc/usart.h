@@ -2,7 +2,7 @@
 #include "stm32f4xx_usart.h"
 
 void USARTInit(void);
-void USARTSendByte(void);
+void USARTSendByte(int);
 void USARTReadByte(void);
 void txDataArrayToMsp(char*);
 

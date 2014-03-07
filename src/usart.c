@@ -1,6 +1,7 @@
 #include "usart.h"
 #include "main.h"
 #include <string.h>
+#include <regex.h>
 
 void USARTInit(){
 	GPIO_InitTypeDef GPIO_InitStructure;
@@ -51,11 +52,11 @@ void USARTInit(){
 
 }
 
-USARTSendByte(){
-	//USART_SendData(USART2, 'h');
+USARTSendByte(int data){
+	USART_SendData(USART2, data);
 	//USART_pu
-	//while (USART_GetFlagStatus(USART2, USART_FLAG_TC) == RESET)
-	//  {}
+	while (USART_GetFlagStatus(USART2, USART_FLAG_TC) == RESET)
+	  {}
 }
 
 USARTReadByte(){
@@ -83,7 +84,8 @@ void txDataArrayToMsp(char *dataArray){
 	for(i=0;i<100;i++){
 		//while( !(USART2->SR & 0x00000040) )
 		//USART_SendData(USART2, 'X');
-		USART_puts(USART2, "X");//*dataArray);
+		USARTSendByte(i);
+		//USART_puts(USART2, "X");//*dataArray);
 		dataArray++;
 	}
 }
@@ -92,24 +94,31 @@ void txDataArrayToMsp(char *dataArray){
 void USART2_IRQHandler(void){
 
 	int MAX_STRLEN = 6;
-	char received_string[6];
+	static char received_string[5];
 	    // check if the USART2 receive interrupt flag was set
     if( USART_GetITStatus(USART2, USART_IT_RXNE) ){
     	static uint8_t cnt = 0; // this counter is used to determine the string length
-        char t = USART2->DR; // the character from the USART1 data register is saved in t
+    	char t = USART2->DR; // the character from the USART1 data register is saved in t
 
         /* check if the received character is not the LF character (used to determine end of string)
         * or the if the maximum string length has been been reached
         */
         if( (t != '\n') && (cnt < MAX_STRLEN) ){
-        	received_string[cnt] = t;
-        	cnt++;
+        	if((cnt == 0 && t == 'P') || cnt != 0){
+        		if(cnt<5){
+        			received_string[cnt] = t;
+        			cnt++;
+        		}
+        	}
         }
         else{ // otherwise reset the character counter and print the received string
-        	if(strcmp(received_string, "PRAck")){
-        		uartSwitchSet('t');
+        	//char command[5] = received_string;
+        	if(strstr(received_string, "PRAck")){
+        		uartSwitchSet('t');//transmit
         	}
-
+        	if(strstr(received_string, "P_ROk")){
+        	    uartSwitchSet('c');//increment counter
+        	}
         	cnt = 0;
         	//USART_puts(USART2, received_string);
         }

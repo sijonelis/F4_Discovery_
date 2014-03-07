@@ -8,9 +8,9 @@
  * @brief   This file is a template for the STM F4 Discovery board.
  *
  * The original Discovery F4 code has been ported to the Coocox IDE V1.7.5 with USB CDC support
- * built-in.  This code can be used as a starting point for further development. 
+ * built-in.  This code can be used as a starting point for further development.
  *
- * CooCox provides a nice user friendly development environment with ongoing community support.  
+ * CooCox provides a nice user friendly development environment with ongoing community support.
  * This version uses the latest ARM GNU tool chain (4.7-2013-q3) maintained by a team of ARM employees
  * and is available here:     https://launchpad.net/gcc-arm-embedded
  * CooCox is available here:  www.coocox.org
@@ -35,7 +35,7 @@
   *
   * <h2><center>&copy; COPYRIGHT 2011 STMicroelectronics</center></h2>
   ******************************************************************************
-  */ 
+  */
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_flash.h"
 #include "main.h"
@@ -83,7 +83,7 @@
 /* Private variables ---------------------------------------------------------*/
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
   #if defined ( __ICCARM__ ) /*!< IAR Compiler */
-    #pragma data_alignment = 4   
+    #pragma data_alignment = 4
   #endif
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
 __ALIGN_BEGIN USB_OTG_CORE_HANDLE  USB_OTG_dev __ALIGN_END;
@@ -259,7 +259,9 @@ int main(void)
 
 	//adc variables
 	float *result;
-	char mockResult[200];
+	char mockResult[600];
+	char UARTTxPacket[100];
+	static short ultrasoundPacketTxMultiplier = 0;
 
 	//usart state machine switch
 	uartSwitch = 'r';
@@ -332,9 +334,15 @@ int main(void)
     	if(uartSwitchGet() != 'r')
     		switch(uartSwitchGet()){
     		case 't':
-    			for (i=0;i<200;i++)
+    			for (i=0;i<600;i++)
     				mockResult[i] = i;
-    			txDataArrayToMsp(mockResult);
+    			for(i=0;i<100;i++)
+    				UARTTxPacket[i] = mockResult[i+100*ultrasoundPacketTxMultiplier];
+    			txDataArrayToMsp(UARTTxPacket);
+    			uartSwitchSet('r');
+    			break;
+    		case 'c':
+    			ultrasoundPacketTxMultiplier++;
     			uartSwitchSet('r');
     			break;
     		default:
@@ -473,11 +481,11 @@ int main(void)
   */
 void Fail_Handler(void)
 {
-  /* Erase last sector */ 
+  /* Erase last sector */
   FLASH_EraseSector(FLASH_Sector_11, VoltageRange_3);
   /* Write FAIL code at last word in the flash memory */
   FLASH_ProgramWord(TESTRESULT_ADDRESS, ALLTEST_FAIL);
- 
+
   while(1)
   {
     /* Toggle Red LED */
@@ -497,7 +505,7 @@ void Fail_Handler(void)
   * @retval None
   */
 void assert_failed(uint8_t* file, uint32_t line)
-{ 
+{
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 
