@@ -264,6 +264,7 @@ void (* const g_pfnVectors[])(void) =
   * @retval None
   */
 void Default_Reset_Handler(void)
+
 {
   /* Initialize data and bss */
   unsigned long *pulSrc, *pulDest;
