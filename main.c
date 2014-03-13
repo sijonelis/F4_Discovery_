@@ -350,7 +350,7 @@ int main(void)
     			break;
     		case 'c': //cmd_packet_received_msg.
     			ultrasoundPacketTxMultiplier++;
-    			if (ultrasoundPacketTxMultiplier >= 100)
+    			if (ultrasoundPacketTxMultiplier >= 10)
     				uartSwitchSet('e'); //finish transmission, or...
     			else
     				uartSwitchSet('r'); // prepare for the next packet
